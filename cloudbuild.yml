@@ -1,0 +1,45 @@
+substitutions:
+  _AR_HOSTNAME: "us-central1-docker.pkg.dev"
+  _REPO_NAME: "fastapi-api-repo"
+  _DEPLOY_REGION: "us-central1"
+  _IMAGE_TAG: "latest"
+
+serviceAccount: "projects/festive-folio-470401-t1/serviceAccounts/cloudrun-deployer@festive-folio-470401-t1.iam.gserviceaccount.com"
+
+steps:
+  # Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "$_AR_HOSTNAME/$PROJECT_ID/$_REPO_NAME/fastapi-app:$_IMAGE_TAG",
+        ".",
+      ]
+
+  # Push to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      ["push", "$_AR_HOSTNAME/$PROJECT_ID/$_REPO_NAME/fastapi-app:$_IMAGE_TAG"]
+
+  # Deploy to the EXISTING Cloud Run Service
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "fastapi-service"
+      - "--image"
+      - "$_AR_HOSTNAME/$PROJECT_ID/$_REPO_NAME/fastapi-app:$_IMAGE_TAG"
+      - "--region"
+      - "$_DEPLOY_REGION"
+      - "--service-account"
+      - "fastapi-runtime@festive-folio-470401-t1.iam.gserviceaccount.com"
+      - "--port"
+      - "8080"
+
+images:
+  - "$_AR_HOSTNAME/$PROJECT_ID/$_REPO_NAME/fastapi-app:$_IMAGE_TAG"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
