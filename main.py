@@ -8,7 +8,6 @@ app = FastAPI()
 # --- In-Memory Database ---
 todo_db = []
 
-# --- Data Models ---
 class TodoItem(BaseModel):
     id: int
     title: str
